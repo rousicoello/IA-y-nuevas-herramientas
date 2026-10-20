@@ -1,0 +1,573 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Inteligencia artificial y nuevas herramientas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: barra fija con las 5 fases + cronómetro; una fase visible a la vez, pensada para proyectar. */
+:root{
+  --bg:#F2F4F8; --surface:#FFFFFF; --surface-2:#E9EDF4; --ink:#14213A; --muted:#58657E; --line:#D5DCE7;
+  --mark:#FFD84D; --mark-ink:#14213A;
+  --p1:#C4511A; --p2:#16805A; --p3:#2756C5; --p4:#7B3FB3; --p5:#A3620A;
+  --ok:#1D8A57; --warn:#C98A00; --bad:#C23A3A;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, Consolas, monospace;
+  --phase:var(--p1);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1420; --surface:#161F31; --surface-2:#1E2940; --ink:#E6EBF4; --muted:#9BA7BE; --line:#2B3854;
+  --mark:#FFD84D; --mark-ink:#14213A;
+  --p1:#FF8A50; --p2:#3FCB92; --p3:#7EA2FF; --p4:#C190F0; --p5:#F0B04A;
+  --ok:#48C98A; --warn:#F0BB3A; --bad:#FF7272; color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#0E1420; --surface:#161F31; --surface-2:#1E2940; --ink:#E6EBF4; --muted:#9BA7BE; --line:#2B3854;
+  --mark:#FFD84D; --mark-ink:#14213A;
+  --p1:#FF8A50; --p2:#3FCB92; --p3:#7EA2FF; --p4:#C190F0; --p5:#F0B04A;
+  --ok:#48C98A; --warn:#F0BB3A; --bad:#FF7272; color-scheme:dark;}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.55}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+h1,h2,h3{font-family:var(--display);line-height:1.12;text-wrap:balance;margin:0}
+h2{font-size:clamp(1.7rem,3.4vw,2.6rem);font-weight:800;letter-spacing:-.01em}
+h3{font-size:1.2rem;font-weight:700}
+p{margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,textarea:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--phase);outline-offset:2px}
+.eyebrow{font-family:var(--mono);font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--phase);font-weight:600}
+.muted{color:var(--muted)}
+mark{background:var(--mark);color:var(--mark-ink);padding:0 .2em;border-radius:3px}
+
+/* Barra superior */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:10px}
+.top-in{max-width:1180px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px}
+.brand{display:flex;flex-direction:column;min-width:0}
+.brand b{font-family:var(--display);font-size:1.15rem;font-weight:800}
+.brand span{font-size:.78rem;color:var(--muted)}
+.steps{display:flex;gap:4px;flex-wrap:wrap;flex:1;justify-content:center}
+.step{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:6px 12px;font-size:.88rem;display:flex;gap:6px;align-items:center}
+.step .n{font-family:var(--mono);font-weight:600;color:var(--c)}
+.step[aria-selected="true"]{background:var(--c);border-color:var(--c);color:var(--surface)}
+.step[aria-selected="true"] .n{color:var(--surface)}
+.clock{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.clock .t{font-size:1.25rem;font-weight:600;min-width:4.2ch;text-align:right}
+.clock .t.over{color:var(--bad)}
+.iconbtn{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:5px 10px;font-size:.85rem}
+.iconbtn.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+
+/* Contenido */
+main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 60px}
+.wrap{max-width:1180px;margin:0 auto}
+.phase{display:grid;gap:22px}
+.phase-head{display:grid;gap:8px;border-left:6px solid var(--phase);padding-left:16px}
+.phase-head .lead{font-size:1.1rem;max-width:68ch;color:var(--muted)}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.chip{font-family:var(--mono);font-size:.75rem;border:1px solid var(--line);border-radius:999px;padding:3px 10px;color:var(--muted);background:var(--surface)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;min-width:0}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:16px}
+.grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:14px}
+.notes{background:var(--surface-2);border:1px dashed var(--muted);border-radius:12px;padding:16px 18px;font-size:.95rem}
+.notes h3{font-size:1rem;margin-bottom:6px}
+.notes ul{margin:6px 0 0;padding-left:20px;display:grid;gap:4px}
+.btn{border:0;background:var(--phase);color:var(--surface);border-radius:10px;padding:9px 16px;font-weight:700}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.counter{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.counter button{border:0;background:var(--bg);padding:6px 10px;font-weight:700}
+.counter output{min-width:2.4ch;text-align:center;font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:600;padding:0 6px}
+
+/* Enganchar */
+.objectives{display:grid;gap:8px;margin:0;padding-left:22px}
+.sample{display:grid;gap:12px;align-content:start}
+.sample .kind{font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.sample blockquote{margin:0;font-size:1rem;border-left:3px solid var(--line);padding-left:12px}
+.vote{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:.9rem}
+.reveal{font-weight:700;color:var(--phase)}
+.big-q{font-family:var(--display);font-size:clamp(1.3rem,2.6vw,1.9rem);font-weight:700;max-width:30ch}
+
+/* Explorar */
+.missions{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:10px}
+.mission{text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:12px 14px;display:grid;gap:4px}
+.mission b{font-family:var(--display)}
+.mission small{color:var(--muted)}
+.mission[aria-pressed="true"]{border-color:var(--phase);box-shadow:inset 0 0 0 2px var(--phase)}
+.builder{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:16px}
+.field{display:grid;gap:4px}
+.field label{font-weight:700;font-size:.92rem;display:flex;gap:8px;align-items:baseline}
+.field label .k{font-family:var(--mono);color:var(--phase)}
+.field label small{font-weight:400;color:var(--muted)}
+textarea{width:100%;font:inherit;font-size:.95rem;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--bg);color:var(--ink);resize:vertical;min-height:2.6em}
+pre.prompt{margin:0;white-space:pre-wrap;word-break:break-word;font-family:var(--mono);font-size:.86rem;line-height:1.55;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:14px;max-height:340px;overflow:auto}
+.weak{font-family:var(--mono);font-size:.86rem;background:var(--bg);border:1px dashed var(--bad);border-radius:8px;padding:8px 12px;color:var(--muted)}
+.checks{display:grid;gap:8px}
+.checks label{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+.checks input{width:20px;height:20px;margin-top:2px;accent-color:var(--phase)}
+.verdict{font-weight:700;border-radius:8px;padding:8px 12px;background:var(--surface-2)}
+
+/* Explicar */
+.ideas{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:14px}
+.idea{display:grid;gap:8px;align-content:start}
+.rctfr{display:flex;flex-wrap:wrap;gap:6px}
+.rctfr span{font-family:var(--mono);font-size:.8rem;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:3px 8px}
+.rctfr span b{color:var(--phase)}
+.matrix-wrap{overflow-x:auto}
+table.matrix{border-collapse:separate;border-spacing:6px;width:100%;min-width:640px}
+.matrix th{font-family:var(--mono);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;font-weight:600;padding:4px}
+.matrix th.dim{font-family:var(--display);font-size:.98rem;letter-spacing:0;text-transform:none;color:var(--ink);width:24%}
+.matrix td button{width:100%;text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:8px 10px;font-size:.86rem;display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.matrix td button .c{font-family:var(--mono);font-weight:600;color:var(--phase);font-variant-numeric:tabular-nums}
+.matrix td button.hot{background:color-mix(in srgb,var(--phase) 16%,var(--bg));border-color:var(--phase)}
+.tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:10px}
+.tool{border-top:3px solid var(--phase);padding-top:8px;display:grid;gap:2px}
+.tool b{font-size:.95rem}
+.tool span{font-size:.88rem;color:var(--muted)}
+
+/* Elaborar */
+.scen{display:grid;gap:12px;align-content:start}
+.scen p{font-size:1rem}
+.lights{display:flex;gap:8px;flex-wrap:wrap}
+.light{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:5px 12px 5px 8px;display:flex;align-items:center;gap:6px;font-size:.88rem}
+.light i{width:14px;height:14px;border-radius:50%;background:var(--lc)}
+.light[aria-pressed="true"]{border-color:var(--lc);box-shadow:inset 0 0 0 2px var(--lc)}
+.answer{font-size:.93rem;border-left:4px solid var(--lc);padding:6px 12px;background:var(--bg);border-radius:0 8px 8px 0}
+.aias{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+@media (max-width:760px){.aias{grid-template-columns:1fr}}
+.lvl{text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px;display:grid;gap:2px;align-content:start}
+.lvl .num{font-family:var(--mono);font-weight:600;color:var(--phase)}
+.lvl b{font-family:var(--display);font-size:.98rem}
+.lvl[aria-pressed="true"]{background:var(--phase);color:var(--surface);border-color:var(--phase)}
+.lvl[aria-pressed="true"] .num{color:var(--surface)}
+.lvl-detail{display:grid;gap:8px}
+
+/* Evaluar */
+.quiz{display:grid;gap:14px}
+.qopts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:8px}
+.qopt{text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px 12px;font-size:.95rem}
+.qopt.right{border-color:var(--ok);box-shadow:inset 0 0 0 2px var(--ok)}
+.qopt.wrong{border-color:var(--bad);box-shadow:inset 0 0 0 2px var(--bad);opacity:.85}
+.fb{font-size:.92rem;min-height:1.4em}
+.three21{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:14px}
+.three21 .num{font-family:var(--display);font-size:2.6rem;font-weight:800;color:var(--phase);line-height:1}
+.closing{border-left:6px solid var(--phase);padding:6px 0 6px 16px;font-size:1.05rem;max-width:72ch}
+.footer{margin-top:30px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.src{font-size:.8rem;color:var(--muted);max-width:90ch}
+/* Modo proyección: sin consignas, fases ni tiempos visibles */
+.phase-head .lead,.phase-head .meta,.phase-head .eyebrow,.notes,#notesBtn{display:none!important}
+.clock{display:none}
+body.show-clock .clock{display:flex}
+.step{min-width:2.4em;justify-content:center}
+@media (prefers-reduced-motion:no-preference){.phase{animation:in .35s ease-out}@keyframes in{from{transform:translateY(6px)}to{transform:none}}}
+</style>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand"><b>Inteligencia artificial y nuevas herramientas</b><span>Clase demostrativa</span></div>
+    <nav class="steps" role="tablist" aria-label="Fases 5E" id="steps"></nav>
+    <div class="clock" aria-live="off">
+      <span class="muted" style="font-size:.78rem" id="phaseLabel">Fase</span>
+      <span class="t" id="phaseTime">06:00</span>
+      <button class="iconbtn" id="playBtn" aria-label="Iniciar o pausar cronómetro">Iniciar</button>
+      <button class="iconbtn" id="resetBtn" aria-label="Reiniciar cronómetro de la fase">↺</button>
+      <span class="muted" style="font-size:.78rem">Total <span id="totalTime">00:00</span>/38</span>
+      <button class="iconbtn" id="notesBtn" aria-pressed="false">Guion</button>
+    </div>
+  </div>
+</header>
+
+<main><div class="wrap" id="app">
+
+<!-- 1 ENGANCHAR -->
+<section class="phase" data-phase="1" style="--phase:var(--p1)">
+  <div class="phase-head">
+    <span class="eyebrow">Fase 1 · Enganchar (Engage)</span>
+    <h2>¿Lo escribió un docente o una IA?</h2>
+    <p class="lead">Lean cada fragmento. Por cada uno, levanten la mano si creen que lo escribió una persona o una IA. Yo cuento los votos.</p>
+    <div class="meta"><span class="chip">6 min</span><span class="chip">Plenaria</span><span class="chip">Activa conocimientos previos</span></div>
+  </div>
+  <div class="grid4" id="samples"></div>
+  <div class="row"><button class="btn" id="revealAll">Revelar autoría</button><span class="reveal" id="revealMsg" hidden>Los tres fragmentos fueron generados por IA. Ninguno fue escrito por un docente.</span></div>
+  <div class="grid2">
+    <div class="panel" style="display:grid;gap:12px">
+      <span class="eyebrow">Pregunta detonante</span>
+      <p class="big-q">Si ya no podemos distinguirlo, ¿qué tiene que cambiar en nuestra forma de enseñar y evaluar?</p>
+      <div class="row"><span>¿Quiénes usaron IA esta semana para preparar clases?</span>
+        <span class="counter"><button data-c="usaron" data-d="-1" aria-label="Restar">−</button><output id="c-usaron">0</output><button data-c="usaron" data-d="1" aria-label="Sumar">+</button></span></div>
+    </div>
+    <div class="panel" style="display:grid;gap:10px">
+      <span class="eyebrow">Al terminar la clase podrás</span>
+      <ol class="objectives">
+        <li>Diseñar instrucciones (prompts) estructuradas para planificar, diferenciar y evaluar.</li>
+        <li>Valorar con criterio pedagógico lo que produce una IA antes de llevarlo al aula.</li>
+        <li>Decidir qué usos de la IA son éticos e inclusivos y cuánto uso permitir en una tarea.</li>
+      </ol>
+    </div>
+  </div>
+  <aside class="notes" data-notes hidden>
+    <h3>Guion del facilitador · Enganchar</h3>
+    <ul>
+      <li>Saludo breve (30 s): “Hoy no van a ver diapositivas. Van a trabajar.” Recuerda al tribunal que participa como estudiantes.</li>
+      <li>Lee en voz alta cada fragmento y pide votos a mano alzada. Registra con los botones Humano / IA.</li>
+      <li>Revela: todos son de IA. Pregunta: “¿Qué pistas usaron para decidir? ¿Fueron confiables?”</li>
+      <li>Lanza la pregunta detonante y escucha 2 intervenciones. No la respondas; se retoma en Explicar.</li>
+      <li>Lee los tres objetivos y pasa a Explorar.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- 2 EXPLORAR -->
+<section class="phase" data-phase="2" style="--phase:var(--p2)" hidden>
+  <div class="phase-head">
+    <span class="eyebrow">Fase 2 · Explorar (Explore)</span>
+    <h2>Laboratorio de prompts</h2>
+    <p class="lead">De forma individual, elige una misión. Ajusta el prompt a tu realidad, cópialo en la IA que tengas en el celular (ChatGPT, Gemini, Copilot o Claude) y evalúa el resultado con la lista de cotejo.</p>
+    <div class="meta"><span class="chip">10 min</span><span class="chip">Trabajo individual</span><span class="chip">Aprender haciendo</span></div>
+  </div>
+  <div class="missions" id="missions"></div>
+  <div class="builder">
+    <div class="panel" style="display:grid;gap:12px">
+      <span class="eyebrow">Construye el prompt</span>
+      <div class="field"><label for="f-rol"><span class="k">R</span>Rol <small>quién debe ser la IA</small></label><textarea id="f-rol" rows="2"></textarea></div>
+      <div class="field"><label for="f-ctx"><span class="k">C</span>Contexto <small>tus estudiantes, nivel, entorno</small></label><textarea id="f-ctx" rows="3"></textarea></div>
+      <div class="field"><label for="f-tarea"><span class="k">T</span>Tarea <small>qué necesitas exactamente</small></label><textarea id="f-tarea" rows="3"></textarea></div>
+      <div class="field"><label for="f-fmt"><span class="k">F</span>Formato <small>cómo quieres la respuesta</small></label><textarea id="f-fmt" rows="2"></textarea></div>
+      <div class="field"><label for="f-res"><span class="k">R</span>Restricciones <small>qué evitar o respetar</small></label><textarea id="f-res" rows="2"></textarea></div>
+    </div>
+    <div style="display:grid;gap:16px;align-content:start;min-width:0">
+      <div class="panel" style="display:grid;gap:10px">
+        <span class="eyebrow">Así lo pide la mayoría</span>
+        <p class="weak" id="weakPrompt"></p>
+        <span class="eyebrow">Tu prompt estructurado</span>
+        <pre class="prompt" id="promptOut"></pre>
+        <div class="row"><button class="btn" id="copyBtn">Copiar prompt</button><span class="muted" id="copyMsg" style="font-size:.9rem"></span></div>
+      </div>
+    </div>
+  </div>
+  <aside class="notes" data-notes hidden>
+    <h3>Guion del facilitador · Explorar</h3>
+    <ul>
+      <li>Cada participante elige la misión más cercana a su asignatura. Procura que las 4 misiones queden cubiertas.</li>
+      <li>Primero que prueben el prompt débil (1 min) y luego el estructurado (3 min). La comparación es el aprendizaje.</li>
+      <li>Circula. Pregunta: “¿Qué cambió en la respuesta cuando agregaron contexto?” “¿Lo usarían mañana tal cual?”</li>
+      <li>Si alguien no tiene conexión, redacta su prompt en papel y lo prueba en tu equipo proyectado.</li>
+      <li>Cierra a los 9 min con la lista de cotejo marcada. Pide a 3 o 4 participantes, de misiones distintas, que se preparen para compartir.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- 3 EXPLICAR -->
+<section class="phase" data-phase="3" style="--phase:var(--p3)" hidden>
+  <div class="phase-head">
+    <span class="eyebrow">Fase 3 · Explicar (Explain)</span>
+    <h2>Lo que acabamos de descubrir</h2>
+    <p class="lead">Tres o cuatro participantes comparten en 30 segundos qué mejoró al estructurar su prompt y qué tuvieron que corregir. Luego ordenamos esas ideas.</p>
+    <div class="meta"><span class="chip">8 min</span><span class="chip">Socialización + síntesis</span></div>
+  </div>
+  <div class="ideas">
+    <div class="panel idea">
+      <span class="eyebrow">Idea 1</span>
+      <h3>La IA generativa predice, no comprende</h3>
+      <p>Produce el texto más probable a partir de lo que le das. Por eso puede sonar segura y estar equivocada (lo que se llama <mark>alucinación</mark>), y no conoce a tus estudiantes si tú no se lo cuentas.</p>
+    </div>
+    <div class="panel idea">
+      <span class="eyebrow">Idea 2</span>
+      <h3>El contexto es tuyo</h3>
+      <p>La calidad de la respuesta depende de la instrucción. Lo que funcionó en el laboratorio:</p>
+      <div class="rctfr"><span><b>R</b>ol</span><span><b>C</b>ontexto</span><span><b>T</b>area</span><span><b>F</b>ormato</span><span><b>R</b>estricciones</span></div>
+      <p class="muted" style="font-size:.93rem">Y después iterar: “hazlo más breve”, “agrega un ejemplo de Guayaquil”, “adapta para 2 estudiantes con baja visión”.</p>
+    </div>
+    <div class="panel idea">
+      <span class="eyebrow">Idea 3</span>
+      <h3>Copiloto, no piloto</h3>
+      <p>El docente decide, verifica y firma. La IA ahorra tiempo en borradores; el juicio pedagógico, el vínculo con el estudiante y la evaluación final siguen siendo humanos.</p>
+    </div>
+  </div>
+  <div class="panel" style="display:grid;gap:12px">
+    <div class="row" style="justify-content:space-between">
+      <div style="display:grid;gap:4px"><span class="eyebrow">Marco de competencias en IA para docentes · UNESCO 2024</span>
+      <h3>¿Dónde estás hoy? Toca la celda que te describe</h3></div>
+      <button class="btn ghost" id="resetMatrix">Borrar conteo</button>
+    </div>
+    <div class="matrix-wrap"><table class="matrix" id="matrix"></table></div>
+    <p class="muted" style="font-size:.9rem">Cinco dimensiones y tres niveles de progresión: Adquirir, Profundizar y Crear. Lo que hicimos hoy toca sobre todo “Pedagogía con IA” y “Ética de la IA” en el nivel Adquirir.</p>
+  </div>
+  <div class="panel" style="display:grid;gap:12px">
+    <span class="eyebrow">Mapa de herramientas según la tarea docente</span>
+    <div class="tools" id="tools"></div>
+    <p class="muted" style="font-size:.88rem">Antes de usar una herramienta con estudiantes, revisa su edad mínima y su política de datos.</p>
+  </div>
+  <aside class="notes" data-notes hidden>
+    <h3>Guion del facilitador · Explicar</h3>
+    <ul>
+      <li>Participantes voluntarios: 30 s cada uno (máx. 3 min). Anota en voz alta las palabras clave que coinciden con las 3 ideas.</li>
+      <li>Conecta cada idea con lo que dijeron, no la presentes como teoría aislada.</li>
+      <li>Matriz UNESCO: cada participante toca su celda (o tú registras a mano alzada). Comenta dónde se concentra el grupo.</li>
+      <li>Retoma la pregunta detonante: “Si no podemos distinguirlo, cambiamos el diseño de la tarea”. Eso abre Elaborar.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- 4 ELABORAR -->
+<section class="phase" data-phase="4" style="--phase:var(--p4)" hidden>
+  <div class="phase-head">
+    <span class="eyebrow">Fase 4 · Elaborar (Elaborate)</span>
+    <h2>Semáforo ético y rediseño de una tarea</h2>
+    <p class="lead">Primero cada uno clasifica casos reales del aula. Después cada participante toma una tarea que ya usa con sus estudiantes y decide cuánta IA permitir.</p>
+    <div class="meta"><span class="chip">9 min</span><span class="chip">Transferencia a su práctica</span><span class="chip">Ética e inclusión</span></div>
+  </div>
+  <div class="grid2" id="scenarios"></div>
+  <div class="panel" style="display:grid;gap:14px">
+    <div style="display:grid;gap:4px"><span class="eyebrow">Escala de evaluación con IA (AIAS)</span>
+      <h3>Rediseña: ¿en qué nivel ubicas tu tarea?</h3>
+      </div>
+    <div class="field"><label for="f-tareaGrupo">Mi tarea</label><textarea id="f-tareaGrupo" rows="2" placeholder="Ej.: Ensayo de 1 página sobre el manglar del Golfo de Guayaquil, 10mo EGB"></textarea></div>
+    <div class="aias" id="aias"></div>
+    <div class="lvl-detail panel" id="aiasDetail" style="background:var(--bg)"></div>
+  </div>
+  <aside class="notes" data-notes hidden>
+    <h3>Guion del facilitador · Elaborar</h3>
+    <ul>
+      <li>Semáforo (4 min): lee un caso, cada participante muestra su color con la mano (verde, amarillo, rojo). Marca el que dice la mayoría y revela la lectura sugerida. Prioriza los casos 1, 3 y 5 si falta tiempo.</li>
+      <li>Insiste en el porqué: datos personales, debido proceso, revisión humana, inclusión.</li>
+      <li>AIAS (5 min): cada participante ubica su propia tarea en un nivel (2 min) y luego 2 o 3 comparten la suya. Pide la justificación y una forma de evidenciar el proceso del estudiante.</li>
+      <li>Enlaza con los valores de la UBE: humanismo, inclusión e integridad ética.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- 5 EVALUAR -->
+<section class="phase" data-phase="5" style="--phase:var(--p5)" hidden>
+  <div class="phase-head">
+    <span class="eyebrow">Fase 5 · Evaluar (Evaluate)</span>
+    <h2>Ticket de salida</h2>
+    <p class="lead">Cuatro preguntas rápidas. Respondan mostrando con los dedos la opción (1 a 4); después tocamos la respuesta y comentamos.</p>
+    <div class="meta"><span class="chip">5 min</span><span class="chip">Evaluación formativa</span><span class="chip">Metacognición</span></div>
+  </div>
+  <div class="panel quiz" id="quiz"></div>
+  <div class="row"><span class="eyebrow" style="font-size:.85rem">Respuestas correctas:</span><span id="score" style="font-family:var(--mono);font-weight:600">0 / 4</span></div>
+  <p class="closing">La misión de la UBE habla de formar profesionales “competentes y humanistas”. La IA puede hacernos más eficientes, pero lo humanista lo ponemos nosotros: el criterio, la inclusión y el vínculo con cada estudiante.</p>
+  <aside class="notes" data-notes hidden>
+    <h3>Guion del facilitador · Evaluar</h3>
+    <ul>
+      <li>Quiz (2 min): lee la pregunta, cuenta 3-2-1 y todos muestran dedos. Toca la opción con más votos y comenta la retroalimentación.</li>
+      <li>3-2-1 (2 min): pide una respuesta oral por casilla y escríbela en pantalla.</li>
+      <li>Cierre (1 min): lee la frase final y agradece. Ofrece el enlace de este recurso a los participantes.</li>
+    </ul>
+  </aside>
+</section>
+
+<div class="footer">
+  <button class="btn ghost" id="prevBtn">← Fase anterior</button>
+  <button class="btn ghost" id="wipe">Reiniciar toda la clase</button>
+  <button class="btn" id="nextBtn" style="background:var(--ink)">Siguiente fase →</button>
+</div>
+<p class="src" style="margin-top:18px">Referencias: UNESCO (2024), <i>AI competency framework for teachers</i>. Perkins, Furze, Roe y MacVaugh (2024), <i>AI Assessment Scale</i>. Ecuador, Ley Orgánica de Protección de Datos Personales (2021). Misión institucional: Universidad Bolivariana del Ecuador.</p>
+
+</div></main>
+
+<script>
+const S = (()=>{ try{ return JSON.parse(localStorage.getItem('copiloto-aula')||'{}') }catch(e){ return {} } })();
+const save = ()=>{ try{ localStorage.setItem('copiloto-aula', JSON.stringify(S)) }catch(e){} };
+const $ = s=>document.querySelector(s);
+const esc = t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---------- Fases y cronómetro ---------- */
+const PHASES=[
+ {n:1,name:'Enganchar',min:6,c:'--p1'},{n:2,name:'Explorar',min:10,c:'--p2'},
+ {n:3,name:'Explicar',min:8,c:'--p3'},{n:4,name:'Elaborar',min:9,c:'--p4'},{n:5,name:'Evaluar',min:5,c:'--p5'}];
+let cur = S.phase||1, running=false, phaseLeft = PHASES[cur-1].min*60, total = 0, tick=null;
+const fmt = s=>{const neg=s<0; s=Math.abs(s); return (neg?'-':'')+String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')};
+$('#steps').innerHTML = PHASES.map(p=>`<button class="step" role="tab" style="--c:var(${p.c})" data-go="${p.n}" aria-label="Parte ${p.n}"><span class="n">${p.n}</span></button>`).join('');
+function show(n){
+  cur=n; S.phase=n; save();
+  document.querySelectorAll('.phase').forEach(s=>s.hidden = +s.dataset.phase!==n);
+  document.querySelectorAll('.step').forEach(b=>b.setAttribute('aria-selected', +b.dataset.go===n));
+  document.querySelector('.wrap').style.setProperty('--phase',`var(${PHASES[n-1].c})`);
+  phaseLeft = PHASES[n-1].min*60; paint();
+  $('#prevBtn').disabled = n===1; $('#nextBtn').hidden = n===5;
+  window.scrollTo({top:0});
+}
+function paint(){
+  $('#phaseLabel').textContent = PHASES[cur-1].name;
+  $('#phaseTime').textContent = fmt(phaseLeft);
+  $('#phaseTime').classList.toggle('over', phaseLeft<0);
+  $('#totalTime').textContent = fmt(total);
+  $('#playBtn').textContent = running?'Pausa':'Iniciar';
+}
+$('#playBtn').onclick=()=>{ running=!running; if(running){ tick=setInterval(()=>{phaseLeft--; total++; paint()},1000)} else clearInterval(tick); paint(); };
+$('#resetBtn').onclick=()=>{ phaseLeft = PHASES[cur-1].min*60; paint(); };
+$('#steps').onclick=e=>{const b=e.target.closest('[data-go]'); if(b) show(+b.dataset.go)};
+$('#prevBtn').onclick=()=>cur>1&&show(cur-1);
+$('#nextBtn').onclick=()=>cur<5&&show(cur+1);
+document.addEventListener('keydown',e=>{ if(e.target.matches('textarea,input,select')) return;
+  if(e.key==='ArrowRight'&&cur<5) show(cur+1); if(e.key==='ArrowLeft'&&cur>1) show(cur-1);
+  if(e.key===' '){ e.preventDefault(); $('#playBtn').click(); }
+  if(e.key==='t'||e.key==='T'){ document.body.classList.toggle('show-clock'); clearTimeout(window._ct); if(document.body.classList.contains('show-clock')) window._ct=setTimeout(()=>document.body.classList.remove('show-clock'),5000); } });
+const notesBtn=$('#notesBtn');
+function setNotes(on){ S.notes=on; save(); notesBtn.classList.toggle('on',on); notesBtn.setAttribute('aria-pressed',on); document.querySelectorAll('[data-notes]').forEach(n=>n.hidden=!on) }
+notesBtn.onclick=()=>setNotes(!S.notes);
+
+/* ---------- Contadores ---------- */
+S.c = S.c||{};
+function counter(key){ return `<span class="counter"><button data-c="${key}" data-d="-1" aria-label="Restar">−</button><output id="c-${key}">${S.c[key]||0}</output><button data-c="${key}" data-d="1" aria-label="Sumar">+</button></span>` }
+document.addEventListener('click',e=>{ const b=e.target.closest('[data-c]'); if(!b) return;
+  const k=b.dataset.c; S.c[k]=Math.max(0,(S.c[k]||0)+ +b.dataset.d); save();
+  const o=document.getElementById('c-'+k); if(o) o.textContent=S.c[k]; });
+$('#c-usaron').textContent = S.c.usaron||0;
+
+/* ---------- 1. Enganchar ---------- */
+const SAMPLES=[
+ {k:'Retroalimentación a un estudiante',t:'Mateo, tu cuento tiene un inicio que atrapa: la tormenta sobre el estero se siente real. Para la próxima versión, trabaja el diálogo entre los hermanos; ahora todos hablan igual. ¿Cómo hablaría alguien que tiene miedo?'},
+ {k:'Objetivo de aprendizaje',t:'Explicar el ciclo del agua relacionándolo con las lluvias de invierno en la Costa ecuatoriana, mediante la observación de un experimento sencillo, para valorar el cuidado de las fuentes hídricas de la comunidad.'},
+ {k:'Pregunta para debate en 1ro BGU',t:'Si una aplicación pudiera decirte con 90 % de precisión qué carrera te hará feliz, ¿seguirías su recomendación aunque contradiga lo que siempre soñaste? Justifica con un argumento y un contraargumento.'}];
+$('#samples').innerHTML = SAMPLES.map((s,i)=>`<div class="panel sample"><span class="kind">${i+1} · ${s.k}</span><blockquote>${s.t}</blockquote>
+ <div class="vote"><span>Humano</span>${counter('h'+i)}<span>IA</span>${counter('ia'+i)}</div></div>`).join('');
+function setReveal(on){ S.reveal=on; save(); $('#revealMsg').hidden=!on; $('#revealAll').textContent= on?'Ocultar autoría':'Revelar autoría' }
+$('#revealAll').onclick=()=>setReveal(!S.reveal);
+
+/* ---------- 2. Explorar ---------- */
+const MISSIONS=[
+ {id:'plan',t:'Planificar',d:'Microplanificación de 40 min',
+  weak:'Hazme una clase del ciclo del agua.',
+  rol:'Eres un docente experto en Ciencias Naturales y en aprendizaje activo para Educación General Básica en Ecuador.',
+  ctx:'Mis estudiantes son de 7mo EGB (11-12 años), 32 en el aula, en una escuela fiscal de Durán. Viven cerca del río Guayas y conocen las inundaciones del invierno. Tenemos pizarra y un proyector, sin internet para ellos.',
+  tarea:'Diseña una clase de 40 minutos sobre el ciclo del agua con una actividad experimental sencilla y una pregunta que conecte con su comunidad.',
+  fmt:'Tabla con columnas: momento, tiempo, actividad del docente, actividad del estudiante, recursos. Al final, 3 preguntas de cierre.',
+  res:'Materiales de bajo costo. Lenguaje sencillo. No uses actividades que requieran internet.'},
+ {id:'dua',t:'Incluir (DUA)',d:'Adaptar una lectura a 3 niveles',
+  weak:'Simplifica este texto.',
+  rol:'Eres especialista en Diseño Universal para el Aprendizaje (DUA) y en lectura inicial.',
+  ctx:'Tengo un curso de 5to EGB con estudiantes en distintos niveles lectores; dos tienen dificultades de lectura (posible dislexia) y uno es hablante de kichwa en casa.',
+  tarea:'Reescribe el texto que pego abajo en tres versiones: nivel inicial, intermedio y avanzado, manteniendo las mismas ideas clave. [Pega aquí un párrafo de tu libro de texto]',
+  fmt:'Tres bloques titulados por nivel. En el nivel inicial usa oraciones cortas y añade 3 palabras clave con su significado.',
+  res:'No cambies los datos del texto original. Evita lenguaje infantilizado. Sugiere un apoyo visual para cada versión.'},
+ {id:'eval',t:'Evaluar',d:'Rúbrica analítica',
+  weak:'Haz una rúbrica para exposiciones.',
+  rol:'Eres un docente de bachillerato con experiencia en evaluación formativa.',
+  ctx:'Estudiantes de 1ro BGU presentarán en grupos de 4 una exposición de 5 minutos sobre un problema ambiental de su barrio.',
+  tarea:'Elabora una rúbrica analítica con 4 criterios: contenido, uso de evidencias, comunicación oral y trabajo en equipo.',
+  fmt:'Tabla con 4 niveles de desempeño (Inicial, En proceso, Logrado, Destacado) y descriptores observables. Escala sobre 10 puntos.',
+  res:'Descriptores en lenguaje que el estudiante entienda. Evita palabras vagas como “bueno” o “adecuado”.'},
+ {id:'bloom',t:'Pensamiento crítico',d:'Preguntas por niveles de Bloom',
+  weak:'Dame preguntas sobre la Revolución Liberal.',
+  rol:'Eres docente de Historia del Ecuador y diseñas preguntas para desarrollar pensamiento crítico.',
+  ctx:'Estudiantes de 2do BGU han leído sobre la Revolución Liberal de 1895 y el papel de Eloy Alfaro.',
+  tarea:'Crea 6 preguntas, una por cada nivel de la taxonomía de Bloom revisada (recordar, comprender, aplicar, analizar, evaluar, crear).',
+  fmt:'Lista numerada con el nivel entre corchetes y, debajo, lo que se esperaría en una buena respuesta.',
+  res:'Al menos dos preguntas deben conectar el tema con la vida actual de los estudiantes. Indica qué datos debo verificar en una fuente confiable.'}];
+const FIELDS=['rol','ctx','tarea','fmt','res'];
+S.prompt = S.prompt||{};
+let mission = S.mission||'plan';
+$('#missions').innerHTML = MISSIONS.map((m,i)=>`<button class="mission" data-m="${m.id}" aria-pressed="false"><small>Misión ${i+1}</small><b>${m.t}</b><small>${m.d}</small></button>`).join('');
+function loadMission(id){
+  mission=id; S.mission=id; save();
+  const m=MISSIONS.find(x=>x.id===id), saved=S.prompt[id]||{};
+  document.querySelectorAll('.mission').forEach(b=>b.setAttribute('aria-pressed', b.dataset.m===id));
+  FIELDS.forEach(f=>{ $('#f-'+f).value = saved[f] ?? m[f] });
+  $('#weakPrompt').textContent = '“'+m.weak+'”';
+  buildPrompt();
+}
+function buildPrompt(){
+  const v=Object.fromEntries(FIELDS.map(f=>[f,$('#f-'+f).value.trim()]));
+  S.prompt[mission]=v; save();
+  $('#promptOut').textContent = [v.rol, v.ctx&&('Contexto: '+v.ctx), v.tarea&&('Tarea: '+v.tarea), v.fmt&&('Formato de respuesta: '+v.fmt), v.res&&('Restricciones: '+v.res)].filter(Boolean).join('\n\n');
+}
+$('#missions').onclick=e=>{const b=e.target.closest('[data-m]'); if(b) loadMission(b.dataset.m)};
+FIELDS.forEach(f=>$('#f-'+f).addEventListener('input',buildPrompt));
+$('#copyBtn').onclick=()=>{
+  const txt=$('#promptOut').textContent;
+  const ok=()=>{$('#copyMsg').textContent='Copiado. Pégalo en tu IA.'};
+  const fallback=()=>{const r=document.createRange(); r.selectNodeContents($('#promptOut')); const s=getSelection(); s.removeAllRanges(); s.addRange(r); $('#copyMsg').textContent='Texto seleccionado: usa Ctrl+C.'};
+  try{ navigator.clipboard.writeText(txt).then(ok,fallback) }catch(e){ fallback() }
+};
+
+
+/* ---------- 3. Explicar ---------- */
+const DIMS=[
+ ['Mentalidad centrada en el ser humano',['Reconocer que la IA la crean y controlan personas','Decidir con agencia propia cuándo usarla y cuándo no','Promover un uso socialmente responsable de la IA']],
+ ['Ética de la IA',['Conocer principios: privacidad, sesgo, transparencia','Usar la IA de forma segura y responsable con estudiantes','Co-construir normas de uso con la comunidad educativa']],
+ ['Fundamentos y aplicaciones de IA',['Comprender cómo funciona la IA y sus límites','Aplicar herramientas a tareas docentes concretas','Crear o adaptar soluciones con IA']],
+ ['Pedagogía con IA',['Validar herramientas antes de llevarlas al aula','Integrar la IA en la enseñanza y la evaluación','Transformar las prácticas pedagógicas con IA']],
+ ['IA para el desarrollo profesional',['Usar la IA para aprender por cuenta propia','Mejorar la propia práctica de forma continua','Liderar la innovación entre colegas']]];
+const LEVELS=['Adquirir','Profundizar','Crear'];
+S.mx=S.mx||{};
+function drawMatrix(){
+  const max=Math.max(1,...Object.values(S.mx));
+  $('#matrix').innerHTML = `<thead><tr><th>Dimensión</th>${LEVELS.map(l=>`<th>${l}</th>`).join('')}</tr></thead><tbody>`+
+   DIMS.map((d,i)=>`<tr><th class="dim" scope="row">${d[0]}</th>${d[1].map((t,j)=>{const k=i+'-'+j,v=S.mx[k]||0;
+    return `<td><button data-mx="${k}" class="${v&&v===max?'hot':''}"><span>${t}</span><span class="c">${v||''}</span></button></td>`}).join('')}</tr>`).join('')+'</tbody>';
+}
+$('#matrix').onclick=e=>{const b=e.target.closest('[data-mx]'); if(!b) return; S.mx[b.dataset.mx]=(S.mx[b.dataset.mx]||0)+1; save(); drawMatrix()};
+$('#resetMatrix').onclick=()=>{S.mx={}; save(); drawMatrix()};
+const TOOLS=[
+ ['Planificar y redactar','ChatGPT, Gemini, Copilot, Claude'],
+ ['Estudiar con tus propias fuentes','NotebookLM: responde solo con los documentos que subes'],
+ ['Diferenciar y adaptar','MagicSchool, Diffit: niveles de lectura, apoyos'],
+ ['Crear recursos visuales','Canva (Magic Studio), generadores de imágenes'],
+ ['Evaluar y gamificar','Google Forms, Kahoot, Socrative'],
+ ['Clases interactivas','Curipod, Nearpod, Mentimeter']];
+$('#tools').innerHTML = TOOLS.map(t=>`<div class="tool"><b>${t[0]}</b><span>${t[1]}</span></div>`).join('');
+
+/* ---------- 4. Elaborar ---------- */
+const LIGHTS={g:['Verde','--ok'],y:['Amarillo','--warn'],r:['Rojo','--bad']};
+const SCEN=[
+ {t:'Un docente pega en un chatbot gratuito la lista del curso con nombres, cédulas y notas para que le calcule los promedios.',a:'r',w:'Expone datos personales de menores. La Ley Orgánica de Protección de Datos Personales exige cuidarlos. Alternativa: anonimizar o usar la hoja de cálculo.'},
+ {t:'Una docente pide a la IA tres versiones de la misma lectura para distintos niveles y las revisa antes de entregarlas.',a:'g',w:'Uso inclusivo alineado con el DUA, con revisión humana. Es el tipo de uso que ahorra tiempo sin ceder el criterio.'},
+ {t:'Un detector de IA marca 87 % en un ensayo y el docente pone cero sin conversar con el estudiante.',a:'r',w:'Los detectores fallan con frecuencia y afectan más a quienes escriben en una segunda lengua. Se conversa, se revisa el proceso y se pide evidencia.'},
+ {t:'Un docente genera con IA la retroalimentación de 40 ensayos y la envía sin leerla.',a:'y',w:'Puede ahorrar tiempo, pero sin lectura humana la retroalimentación puede ser genérica o incorrecta, y el estudiante pierde el vínculo con su docente. Revisar y personalizar lo vuelve verde.'}];
+S.sc=S.sc||{};
+function drawScen(){
+  $('#scenarios').innerHTML = SCEN.map((s,i)=>{const pick=S.sc[i], L=LIGHTS[s.a];
+   return `<div class="panel scen"><span class="eyebrow">Caso ${i+1}</span><p>${s.t}</p>
+    <div class="lights">${Object.entries(LIGHTS).map(([k,[n,c]])=>`<button class="light" style="--lc:var(${c})" data-sc="${i}" data-l="${k}" aria-pressed="${pick===k}"><i></i>${n}</button>`).join('')}</div>
+    ${pick?`<p class="answer" style="--lc:var(${L[1]})"><b>Lectura sugerida: ${L[0]}.</b> ${s.w}</p>`:''}</div>`}).join('');
+}
+$('#scenarios').onclick=e=>{const b=e.target.closest('[data-sc]'); if(!b) return; const i=b.dataset.sc; S.sc[i]= S.sc[i]===b.dataset.l?undefined:b.dataset.l; save(); drawScen()};
+const AIAS=[
+ ['Sin IA','La tarea se realiza sin ninguna ayuda de IA, en un entorno supervisado.','Evaluaciones en clase, orales, a mano. Úsalo cuando necesitas evidencia del conocimiento propio.'],
+ ['IA para planificar','La IA ayuda a generar ideas, esquemas o a investigar, pero el producto final es del estudiante.','Pide la lluvia de ideas generada y que el estudiante explique qué tomó y qué no.'],
+ ['Colaboración con IA','La IA apoya en la redacción o resolución, y el estudiante evalúa y modifica lo que produce.','Exige el historial de la conversación y una reflexión sobre los cambios hechos.'],
+ ['IA completa','Se puede usar IA en toda la tarea; el estudiante dirige el proceso y responde por el resultado.','Evalúa el criterio: calidad de los prompts, verificación y decisiones tomadas.'],
+ ['Exploración con IA','La IA se usa de forma creativa para resolver problemas nuevos o co-diseñar con ella.','Ideal para proyectos de innovación. Evalúa el proceso y la originalidad de la solución.']];
+function drawAias(){
+  const s=S.aias??null;
+  $('#aias').innerHTML = AIAS.map((a,i)=>`<button class="lvl" data-a="${i}" aria-pressed="${s===i}"><span class="num">Nivel ${i+1}</span><b>${a[0]}</b></button>`).join('');
+  $('#aiasDetail').innerHTML = s===null ? '<p class="muted">Elige un nivel para ver qué implica y cómo evaluarlo.</p>' :
+   `<span class="eyebrow">Nivel ${s+1} · ${AIAS[s][0]}</span><p>${AIAS[s][1]}</p><p><b>Cómo evaluarlo:</b> ${AIAS[s][2]}</p>
+    <p class="muted" style="font-size:.92rem">Mi justificación: “Elijo este nivel porque…”</p>`;
+}
+$('#aias').onclick=e=>{const b=e.target.closest('[data-a]'); if(!b) return; S.aias=+b.dataset.a; save(); drawAias()};
+
+/* ---------- 5. Evaluar ---------- */
+const QUIZ=[
+ {q:'¿Qué elemento del prompt hace que la respuesta se ajuste a tus estudiantes?',o:['El rol','El contexto','La longitud','El idioma'],a:1,f:'El contexto (nivel, edad, entorno, necesidades) es lo que la IA no puede adivinar.'},
+ {q:'Un detector de IA marca un ensayo como “generado por IA”. ¿Qué es lo más adecuado?',o:['Calificar con cero','Repetir el detector con otra herramienta','Conversar con el estudiante y revisar su proceso','Ignorarlo por completo'],a:2,f:'El detector puede orientar, pero no es prueba. Se dialoga y se pide evidencia del proceso.'},
+ {q:'El estudiante usa IA solo para la lluvia de ideas y redacta el ensayo por su cuenta. ¿Qué nivel de AIAS es?',o:['Nivel 1 · Sin IA','Nivel 2 · IA para planificar','Nivel 3 · Colaboración','Nivel 4 · IA completa'],a:1,f:'La IA apoya la planificación; el producto final es del estudiante.'},
+ {q:'Según el marco UNESCO, decidir con criterio propio cuándo no usar IA corresponde a…',o:['Fundamentos y aplicaciones','Mentalidad centrada en el ser humano','IA para el desarrollo profesional','Pedagogía con IA'],a:1,f:'La agencia humana es la base del marco: la IA se usa al servicio de las personas.'}];
+S.q=S.q||{};
+function drawQuiz(){
+  $('#quiz').innerHTML = QUIZ.map((x,i)=>{const p=S.q[i];
+   return `<div style="display:grid;gap:8px"><b>${i+1}. ${x.q}</b><div class="qopts">${x.o.map((o,j)=>{
+     const cls = p===undefined?'': j===x.a?'right': j===p?'wrong':'';
+     return `<button class="qopt ${cls}" data-q="${i}" data-o="${j}"><span style="font-family:var(--mono);color:var(--phase);font-weight:600">${j+1}</span> ${o}</button>`}).join('')}</div>
+    <p class="fb">${p===undefined?'':(p===x.a?'<b style="color:var(--ok)">Correcto.</b> ':'<b style="color:var(--bad)">Revisemos.</b> ')+x.f}</p></div>`}).join('');
+  $('#score').textContent = QUIZ.filter((x,i)=>S.q[i]===x.a).length+' / 4';
+}
+$('#quiz').onclick=e=>{const b=e.target.closest('[data-q]'); if(!b) return; const i=b.dataset.q; S.q[i]= S.q[i]===+b.dataset.o?undefined:+b.dataset.o; save(); drawQuiz()};
+['f-tareaGrupo'].forEach(id=>{const el=$('#'+id); el.value=(S.txt||{})[id]||''; el.addEventListener('input',()=>{S.txt=S.txt||{}; S.txt[id]=el.value; save()})});
+
+/* ---------- Reinicio ---------- */
+let armed=false;
+$('#wipe').onclick=()=>{
+  if(!armed){ armed=true; $('#wipe').textContent='Toca otra vez para borrar todo'; setTimeout(()=>{armed=false; $('#wipe').textContent='Reiniciar toda la clase'},3000); return }
+  try{ localStorage.removeItem('copiloto-aula') }catch(e){}
+  location.reload();
+};
+
+/* ---------- Arranque ---------- */
+loadMission(mission); drawMatrix(); drawScen(); drawAias(); drawQuiz();
+setReveal(!!S.reveal); setNotes(!!S.notes); show(cur);
+</script>
+
+</body></html>
